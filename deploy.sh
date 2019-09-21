@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Ironic vars
+export PULL_SECRET_FILE="${PULL_SECRET_FILE:-openshift_pull.json}"
 export INTERNAL_NIC="${INTERNAL_NIC:-ens3}"
 export IRONIC_IMAGE=${IRONIC_IMAGE:-"quay.io/metal3-io/ironic:master"}
 export COREOS_DOWNLOADER_IMAGE=${COREOS_DOWNLOADER_IMAGE:-"quay.io/openshift-metal3/rhcos-downloader:master"}
@@ -31,14 +32,11 @@ function extract_command() {
     outdir="$3"
 
     extract_dir=$(mktemp -d "installer--XXXXXXXXXX")
-    pullsecret_file=$(mktemp "pullsecret--XXXXXXXXXX")
 
-    echo "${PULL_SECRET}" > "${pullsecret_file}"
-    oc adm release extract --registry-config "${pullsecret_file}" --command=$cmd --to "${extract_dir}" ${release_image}
+    oc adm release extract --registry-config "${PULL_SECRET_FILE}" --command=$cmd --to "${extract_dir}" ${release_image}
 
     mv "${extract_dir}/${cmd}" "${outdir}"
     rm -rf "${extract_dir}"
-    rm -rf "${pullsecret_file}"
 }
 
 # Let's always grab the `oc` from the release we're using.
@@ -178,6 +176,7 @@ then
 fi
 
 cp install-config.yaml ocp
+LOGLEVEL="debug"
 ${OPENSHIFT_INSTALLER} --dir ocp --log-level=${LOGLEVEL} create manifests
 gen_metal3_config -u ${RHCOS_IMAGE_URL} -i ${INTERNAL_NIC} > ocp/openshift/99-metal3-config-map.yaml
 ${OPENSHIFT_INSTALLER} --dir ocp --log-level=${LOGLEVEL} create cluster

@@ -6,6 +6,7 @@ sudo firewall-cmd --zone=libvirt --add-port=6230-6235/udp
 sudo firewall-cmd --zone=libvirt --add-port=6230-6235/udp --permanent
 sudo ps -ef | grep -q vbmcd 
 if [ "$?" != "0" ] ; then 
+  sudo mkdir /root/.vbmc 2>/dev/null || true
   alias vbmcd='sudo podman run -d --name vbmcd  -p 6230:6230/udp -p 6231:6231/udp -p 6232:6232/udp -v /root/.vbmc:/root/.vbmc -v /var/run/libvirt:/var/run/libvirt karmab/virtualbmc-libvirt --foreground'
   alias vbmc='sudo podman exec vbmcd vbmc'
   shopt -s expand_aliases
