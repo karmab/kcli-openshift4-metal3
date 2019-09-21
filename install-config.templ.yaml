@@ -1,0 +1,49 @@
+apiVersion: v1
+baseDomain: ${domain}
+networking:
+  machineCIDR: 192.168.111.0/24
+metadata:
+  name: ${cluster}
+compute:
+- name: worker
+  replicas: 0
+controlPlane:
+  name: master
+  replicas: 3
+  platform:
+    baremetal: {}
+platform:
+  baremetal:
+    externalBridge: ${external_bridge} 
+    apiVIP: 192.168.111.5
+    dnsVIP: 192.168.111.3
+    ingressVIP: 192.168.111.4
+    hosts:
+      - name: openshift-master-0
+        role: master
+        bmc:
+          address: ipmi://172.22.0.1:6230
+          username: admin
+          password: password
+        bootMACAddress: aa:bb:cc:dd:ee:01
+        hardwareProfile: libvirt
+      - name: openshift-master-1
+        role: master
+        bmc:
+          address: ipmi://172.22.0.1:6231
+          username: admin
+          password: password
+        bootMACAddress: aa:bb:cc:dd:ee:02
+        hardwareProfile: libvirt
+      - name: openshift-master-2
+        role: master
+        bmc:
+          address: ipmi://172.22.0.1:6232
+          username: admin
+          password: password
+        bootMACAddress: aa:bb:cc:dd:ee:03
+        hardwareProfile: libvirt
+pullSecret: |
+    ${pull_secret}
+sshKey: |
+    ${ssh_key}
