@@ -1,10 +1,10 @@
 #!/bin/bash
 
-sudo firewall-cmd --zone=libvirt --add-port=80/tcp
-sudo firewall-cmd --zone=libvirt --add-port=80/tcp --permanent
-sudo firewall-cmd --zone=libvirt --add-port=6230-6235/udp
-sudo firewall-cmd --zone=libvirt --add-port=6230-6235/udp --permanent
-sudo ps -ef | grep -q vbmcd 
+sudo firewall-cmd --zone=libvirt --add-port=80/tcp >/dev/null 2>&1
+sudo firewall-cmd --zone=libvirt --add-port=80/tcp --permanent >/dev/null 2>&1
+sudo firewall-cmd --zone=libvirt --add-port=6230-6235/udp >/dev/null 2>&1
+sudo firewall-cmd --zone=libvirt --add-port=6230-6235/udp --permanent >/dev/null 2>&1
+sudo ps -ef | grep vbmcd | grep -qv grep 
 if [ "$?" != "0" ] ; then 
   sudo mkdir /root/.vbmc 2>/dev/null || true
   alias vbmcd='sudo podman run -d --name vbmcd  -p 6230:6230/udp -p 6231:6231/udp -p 6232:6232/udp -v /root/.vbmc:/root/.vbmc -v /var/run/libvirt:/var/run/libvirt karmab/virtualbmc-libvirt --foreground'

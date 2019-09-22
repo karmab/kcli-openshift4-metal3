@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# set some printing colors
+RED='\033[0;31m'
+BLUE='\033[0;36m'
+NC='\033[0m'
+
 which kcli >/dev/null 2>&1
 BIN="$?"
 alias kcli >/dev/null 2>&1

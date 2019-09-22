@@ -2,10 +2,12 @@
 
 # Ironic vars
 export PULL_SECRET_FILE="${PULL_SECRET_FILE:-openshift_pull.json}"
-export INTERNAL_NIC="${INTERNAL_NIC:-ens3}"
 export IRONIC_IMAGE=${IRONIC_IMAGE:-"quay.io/metal3-io/ironic:master"}
 export COREOS_DOWNLOADER_IMAGE=${COREOS_DOWNLOADER_IMAGE:-"quay.io/openshift-metal3/rhcos-downloader:master"}
 export CACHED_IMAGE_DIR="${SCRIPTDIR}/cache"
+export PROVISIONING_INTERFACE="${PROVISIONING_INTERFACE:-ens3}"
+export PROVISIONING_ADDRESS="172.22.0.3"
+export CACHE_URL="http://172.22.0.1/images"
 
 export KUBECONFIG="${PWD}/ocp/auth/kubeconfig"
 
@@ -17,7 +19,7 @@ if [ ! -d "${CACHED_IMAGE_DIR}" ]; then
 fi
 
 export OPENSHIFT_RELEASE_IMAGE="${OPENSHIFT_RELEASE_IMAGE:-registry.svc.ci.openshift.org/ocp/release:4.2}"
-LOGLEVEL="${LOGLEVEL:-info}"
+LOGLEVEL="${LOGLEVEL:-debug}"
 
 export MOBY_DISABLE_PIGZ=true
 
@@ -72,55 +74,6 @@ function rhcos_image_url() {
     RHCOS_INSTALLER_IMAGE_URL=$(echo "${RHCOS_IMAGE_JSON}" | jq -r '.baseURI + .images.openstack.path')
     export RHCOS_IMAGE_URL=${RHCOS_IMAGE_URL:-${RHCOS_INSTALLER_IMAGE_URL}}
   fi
-}
-
-function gen_metal3_config() {
-  fname=${0}
-
-  RHCOS_IMAGE_URL=""
-  PROVISIONING_INTERFACE="eno1"
-  PROVISIONING_ADDRESS="172.22.0.3"
-  CACHE_URL="http://172.22.0.1/images"
-
-  while [[ $# -gt 0 ]]; do
-    switchopt=${1}
-    case ${switchopt} in
-     -i)
-       PROVISIONING_INTERFACE=${2}
-       shift
-       ;;
-     -u)
-       RHCOS_IMAGE_URL=${2}
-       shift
-       ;;
-     -c)
-       CACHE_URL=${2}
-       shift
-       ;;
-      *)
-       echo "Ignoring: function ${fname} encountered unrecognized argument: ${switchopt}" 1>&2
-    esac
-    shift
-  done
-
-  cat - <<EOCM
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: metal3-config
-  namespace: openshift-machine-api
-data:
-  http_port: "6180"
-  provisioning_interface: "${PROVISIONING_INTERFACE}"
-  provisioning_ip: "${PROVISIONING_ADDRESS}/24"
-  dhcp_range: "172.22.0.10,172.22.0.100"
-  deploy_kernel_url: "http://${PROVISIONING_ADDRESS}:6180/images/ironic-python-agent.kernel"
-  deploy_ramdisk_url: "http://${PROVISIONING_ADDRESS}:6180/images/ironic-python-agent.initramfs"
-  ironic_endpoint: "http://${PROVISIONING_ADDRESS}:6385/v1/"
-  ironic_inspector_endpoint: "http://${PROVISIONING_ADDRESS}:5050/v1/"
-  cache_url: "${CACHE_URL}"
-  rhcos_image_url: "${RHCOS_IMAGE_URL}"
-EOCM
 }
 
 function cache_images() {
@@ -178,5 +131,5 @@ fi
 cp install-config.yaml ocp
 LOGLEVEL="debug"
 ${OPENSHIFT_INSTALLER} --dir ocp --log-level=${LOGLEVEL} create manifests
-gen_metal3_config -u ${RHCOS_IMAGE_URL} -i ${INTERNAL_NIC} > ocp/openshift/99-metal3-config-map.yaml
+envsubst < metal3-config-map.yaml > ocp/openshift/99-metal3-config-map.yaml
 ${OPENSHIFT_INSTALLER} --dir ocp --log-level=${LOGLEVEL} create cluster
