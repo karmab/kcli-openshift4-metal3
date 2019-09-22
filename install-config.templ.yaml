@@ -1,49 +1,45 @@
 apiVersion: v1
-baseDomain: ${domain}
+baseDomain: {{ domain }}
 networking:
   machineCIDR: 192.168.111.0/24
 metadata:
-  name: ${cluster}
+  name: {{ cluster}}
 compute:
 - name: worker
-  replicas: 0
+  replicas: {{ workers }}
 controlPlane:
   name: master
-  replicas: 3
+  replicas: {{ masters }}
   platform:
     baremetal: {}
 platform:
   baremetal:
-    externalBridge: ${external_bridge} 
+    externalBridge: {{ external_bridge }}
     apiVIP: 192.168.111.5
     dnsVIP: 192.168.111.3
     ingressVIP: 192.168.111.4
     hosts:
-      - name: openshift-master-0
+{%- for num in range(0, masters) %}
+      - name: openshift-master-{{ num }}
         role: master
         bmc:
-          address: ipmi://172.22.0.1:6230
+          address: ipmi://192.168.111.1:623{{ num }}
           username: admin
           password: password
-        bootMACAddress: aa:bb:cc:dd:ee:01
+        bootMACAddress: aa:bb:cc:dd:ee:0{{ num }}
         hardwareProfile: libvirt
-      - name: openshift-master-1
-        role: master
+{%- endfor %}
+{%- for num in range(0, workers) %}
+      - name: openshift-worker-{{ num }}
+        role: worker
         bmc:
-          address: ipmi://172.22.0.1:6231
+          address: ipmi://192.168.111.1:624{{ num }}
           username: admin
           password: password
-        bootMACAddress: aa:bb:cc:dd:ee:02
+        bootMACAddress: aa:bb:cc:dd:ee:1{{ num }}
         hardwareProfile: libvirt
-      - name: openshift-master-2
-        role: master
-        bmc:
-          address: ipmi://172.22.0.1:6232
-          username: admin
-          password: password
-        bootMACAddress: aa:bb:cc:dd:ee:03
-        hardwareProfile: libvirt
+{%- endfor %}
 pullSecret: |
-    ${pull_secret}
+    {{ pull_secret }}
 sshKey: |
-    ${ssh_key}
+    {{ ssh_key }}

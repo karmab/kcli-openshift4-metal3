@@ -5,6 +5,8 @@ parameters:
  extra_disks: []
  provisioning_net: provisioning
  external_net: baremetal
+ masters: 1
+ workers: 1
 
 {{ external_net }}:
  type: network
@@ -15,7 +17,7 @@ parameters:
  cidr: 172.22.0.0/24
  dhcp: False
 
-{% for num in range(0, 3) %}
+{% for num in range(0, masters) %}
 openshift-master-{{ num }}:
  numcpus: {{ numcpus }}
  start: false
@@ -26,5 +28,19 @@ openshift-master-{{ num }}:
     mac: aa:bb:cc:dd:ee:0{{ num +1 }}
   - name: {{ external_net }}
     ip: 192.168.111.20{{ num }}
+ disks: {{ [disk_size] + extra_disks }}
+{% endfor %}
+
+{% for num in range(0, workers) %}
+openshift-worker-{{ num }}:
+ numcpus: {{ numcpus }}
+ start: false
+ memory: {{ memory }}
+ reserveip: True
+ nets:
+  - name: {{ provisioning_net }}
+    mac: aa:bb:cc:dd:ee:1{{ num +1 }}
+  - name: {{ external_net }}
+    ip: 192.168.111.21{{ num }}
  disks: {{ [disk_size] + extra_disks }}
 {% endfor %}
