@@ -32,13 +32,14 @@ if [ ! -f openshift_pull.json ] ; then
   echo -e "${RED}Missing openshift_pull.json${NC}"
   exit 1
 fi
-export pull_secret=$(cat openshift_pull.json | tr -d [:space:])
-export external_bridge=baremetal
-export cidr="192.168.111.0/24"
-export dns_vip="192.168.111.3"
-export ingress_vip="192.168.111.4"
-export api_vip="192.168.111.5"
-export masters="${masters:-1}"
-export workers="${workers:-1}"
+pull_secret=$(cat openshift_pull.json | tr -d [:space:])
+external_bridge=baremetal
+cidr="192.168.111.0/24"
+dns_vip="192.168.111.3"
+ingress_vip="192.168.111.4"
+api_vip="192.168.111.5"
+masters="${masters:-1}"
+workers="${workers:-1}"
+uri="$(kcli report | grep Connect | sed 's/Connection: //')"
 kcli plan -f metal3.yml -P external_bridge=${external_bridge} -P masters=${masters} -P workers=${workers} metal3
-kcli render -f install-config.templ.yaml -P masters=$masters -P workers=$workers -P domain=$domain -P cluster=$cluster -P external_bridge=$external_bridge -P pull_secret=$pull_secret -P ssh_key=${ssh_key} > install-config.yaml
+kcli render -f install-config.yaml.j2 -P masters=$masters -P workers=$workers -P domain=$domain -P cluster=$cluster -P external_bridge=$external_bridge -P pull_secret="$pull_secret" -P ssh_key="${ssh_key}" -P uri="$uri"> install-config.yaml

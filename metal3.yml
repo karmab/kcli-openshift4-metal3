@@ -28,8 +28,12 @@ openshift-master-{{ num }}:
     mac: aa:bb:cc:dd:ee:0{{ num +1 }}
   - name: {{ external_net }}
     ip: 192.168.111.20{{ num }}
- disks: {{ [disk_size] + extra_disks }}
-{% endfor %}
+ disks: 
+{%- for size in [disk_size] + extra_disks %}
+  - size: {{ size }}
+    interface: scsi
+{%- endfor %}
+{%- endfor %}
 
 {% for num in range(0, workers) %}
 openshift-worker-{{ num }}:
@@ -42,5 +46,8 @@ openshift-worker-{{ num }}:
     mac: aa:bb:cc:dd:ee:1{{ num +1 }}
   - name: {{ external_net }}
     ip: 192.168.111.21{{ num }}
- disks: {{ [disk_size] + extra_disks }}
-{% endfor %}
+{%- for size in [disk_size] + extra_disks %}
+  - size: {{ size }}
+    interface: scsi
+{%- endfor %}
+{%- endfor %}

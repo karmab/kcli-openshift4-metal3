@@ -1,5 +1,7 @@
 #!/bin/bash
 
+masters="${masters:-1}"
+workers="${workers:-1}"
 sudo firewall-cmd --zone=libvirt --add-port=80/tcp >/dev/null 2>&1
 sudo firewall-cmd --zone=libvirt --add-port=80/tcp --permanent >/dev/null 2>&1
 sudo firewall-cmd --zone=libvirt --add-port=6230-6235/udp >/dev/null 2>&1
@@ -12,11 +14,19 @@ if [ "$?" != "0" ] ; then
   shopt -s expand_aliases
   vbmcd > /dev/null 2>&1
 fi
-for num in $(seq 0 2) ; do
- sudo ls /root/.vbmc/openshift_master_$num > /dev/null 2>&1
+for num in $(seq 0 $masters) ; do
+ sudo ls /root/.vbmc/openshift-master-$num > /dev/null 2>&1
  if [ "$?" != "0" ] ; then 
    sudo iptables -A INPUT -p udp --dport 623$num -j ACCEPT
    vbmc add openshift-master-$num --port 623$num --username admin --password password --libvirt-uri qemu:///system
    vbmc start openshift-master-$num
+ fi
+done
+for num in $(seq 0 $workers) ; do
+ sudo ls /root/.vbmc/openshift-master-$num > /dev/null 2>&1
+ if [ "$?" != "0" ] ; then 
+   sudo iptables -A INPUT -p udp --dport 624$num -j ACCEPT
+   vbmc add openshift-worker-$num --port 624$num --username admin --password password --libvirt-uri qemu:///system
+   vbmc start openshift-worker-$num
  fi
 done
