@@ -43,3 +43,4 @@ workers="${workers:-1}"
 uri="$(kcli report | grep Connect | sed 's/Connection: //')"
 kcli plan -f metal3.yml -P external_bridge=${external_bridge} -P masters=${masters} -P workers=${workers} metal3
 kcli render -f install-config.yaml.j2 -P masters=$masters -P workers=$workers -P domain=$domain -P cluster=$cluster -P external_bridge=$external_bridge -P pull_secret="$pull_secret" -P ssh_key="${ssh_key}" -P uri="$uri"> install-config.yaml
+kcli render -f config.sh.j2 -P pull_secret="$pull_secret" > install-config.yaml
